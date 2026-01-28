@@ -98,7 +98,7 @@ function ExportXml
                 $Result | Export-Clixml $path -Depth 2
             }
 
-            # --- EXPORTAÇÃO DE REPOSITÓRIOS (CORREÇÃO DE TIMEOUT) ---
+            # --- EXPORTAÇÃO DE REPOSITÓRIOS ---
             if ($switch -like "repos") {
                 $repos = Get-VBRBackupRepository -WarningAction SilentlyContinue
                 $repoExport = @()
@@ -150,7 +150,7 @@ function ImportXml
     catch { return $null }
 }
 
-# Replace Function for Veeam Correlation
+
 function VeeamStatusReplace
 {
     [CmdletBinding()]
@@ -158,7 +158,7 @@ function VeeamStatusReplace
     $item.replace('Failed', '0').replace('Warning', '1').replace('Success', '2').replace('None', '2').replace('idle', '3').replace('InProgress', '5').replace('Pending', '6').replace('Pausing', '7').replace('Postprocessing', '8').replace('Resuming', '9').replace('Starting', '10').replace('Stopped', '11').replace('Stopping', '12').replace('WaitingRepository', '13').replace('WaitingTape', '13').replace('Working', '13')
 }
 
-# Function Sort-Object VMs by jobs on last backup
+
 function veeam-backuptask-unique
 {
     [CmdletBinding()]
