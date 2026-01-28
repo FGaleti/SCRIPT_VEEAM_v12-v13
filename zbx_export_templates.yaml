@@ -1,0 +1,691 @@
+zabbix_export:
+  version: '6.2'
+  date: '2026-01-28T18:56:35Z'
+  template_groups:
+    -
+      uuid: 091c3e9749cd4c43ab8133cc1f10e8f6
+      name: 'Templates 4.0'
+  templates:
+    -
+      uuid: 392061053328485995ad92886440ae94
+      template: 'Template VEEAM - Backup and Replication'
+      name: 'Template VEEAM - Backup and Replication'
+      description: BACKUP
+      groups:
+        -
+          name: 'Templates 4.0'
+      items:
+        -
+          uuid: 597581fc98d64d328f137a97d8d33aa4
+          name: 'Log de erro no Filegroup'
+          type: ZABBIX_ACTIVE
+          key: 'log[{$AUDIT_LOG},"(0x80040E14)"]'
+          delay: 1d
+          trends: '0'
+          value_type: LOG
+          tags:
+            -
+              tag: Application
+              value: 'VEEAM Services'
+          triggers:
+            -
+              uuid: ad0c7841364e4b5c9663a3ee7b44c7e4
+              expression: 'find(/Template VEEAM - Backup and Replication/log[{$AUDIT_LOG},"(0x80040E14)"],,"like","0x80040E14")=1'
+              name: 'Primary filegroup is full'
+              opdata: '{ITEM.LASTVALUE}'
+              status: DISABLED
+              priority: HIGH
+              manual_close: 'YES'
+        -
+          uuid: 1df3b88186994db7ab12f57c65f01c2f
+          name: 'Result Export Xml Veeam'
+          type: ZABBIX_ACTIVE
+          key: 'system.run[powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Program Files\Zabbix Agent\scripts\zabbix_vbr_job.ps1" exportxml,nowait]'
+          delay: '3600'
+          history: 5d
+          trends: 15d
+          valuemap:
+            name: vbrtaskresult
+          tags:
+            -
+              tag: Application
+              value: 'VEEAM Discovery Mechanics'
+          triggers:
+            -
+              uuid: c499436b007b4c048bfa0fc9b739cfa2
+              expression: 'last(/Template VEEAM - Backup and Replication/system.run[powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Program Files\Zabbix Agent\scripts\zabbix_vbr_job.ps1" exportxml,nowait])<1'
+              name: 'Export XML Veeam Error'
+              status: DISABLED
+              priority: WARNING
+        -
+          uuid: bfd103306d48466781c15c34705f1e73
+          name: 'Number of active jobs'
+          key: 'vbr["RunningJob"]'
+          delay: '300'
+          history: 7d
+          units: job(s)
+          tags:
+            -
+              tag: Application
+              value: 'VEEAM Backup & Recovery - Backup Job(s)'
+        -
+          uuid: 8b9ea14135bb486cb40db995e39c4759
+          name: 'Number of jobs (Total)'
+          key: 'vbr[JobsCount]'
+          delay: '3600'
+          history: 7d
+          units: job(s)
+          tags:
+            -
+              tag: Application
+              value: 'VEEAM Backup & Recovery - Backup Job(s)'
+      discovery_rules:
+        -
+          uuid: bbe9c70ffbf145ef84244b42a7c81b88
+          name: 'VEEAM Agent Jobs'
+          key: 'vbr["DiscoveryAgentJobs"]'
+          delay: 3h
+          lifetime: 1d
+        -
+          uuid: 7bf651f83dcd4c6c9e1cb4ed7c02ad4f
+          name: 'VEEAM Backup Jobs'
+          key: 'vbr["DiscoveryBackupJobs"]'
+          delay: 3h
+          lifetime: 1d
+          item_prototypes:
+            -
+              uuid: 43a35a9c0be249088da080d981d64f0a
+              name: 'Excluded size in job {#JOBNAME}'
+              key: 'vbr[ExcludedSize,{#JOBID}]'
+              delay: 1h
+              history: 7d
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bytes
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: 3501643d8add430796676af80ea5a378
+              name: 'Included size in the job : {#JOBNAME}'
+              key: 'vbr[IncludedSize,{#JOBID}]'
+              delay: 1h
+              history: 7d
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bytes
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: d7cf5069b5644a44915db70a04bf2a60
+              name: 'Last End Time Job : {#JOBNAME}'
+              key: 'vbr[LastEndTime,{#JOBID}]'
+              delay: 1h
+              units: unixtime
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: 86c2c300e1fb4c33b28d14ffa7d0321d
+              name: 'Last Run Time Job : {#JOBNAME}'
+              key: 'vbr[LastRunTime,{#JOBID}]'
+              delay: 1h
+              units: unixtime
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: 56f336f9227c4663b0eef7b1cebea3b2
+              name: 'Next Run Time Job : {#JOBNAME}'
+              key: 'vbr[NextRunTime,{#JOBID}]'
+              delay: 1h
+              trends: '0'
+              value_type: TEXT
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: d29154721cbc416ebd88907274e493ea
+              name: 'Result backup {#JOBNAME}'
+              key: 'vbr[ResultBackup,{#JOBID}]'
+              delay: 1h
+              valuemap:
+                name: vbrJobResult
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+              trigger_prototypes:
+                -
+                  uuid: c13071bd629c43839e60a01b6f38945e
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultBackup,{#JOBID}],300s)<1'
+                  name: 'Backup "{#JOBNAME}" Failed'
+                  priority: HIGH
+                  manual_close: 'YES'
+                -
+                  uuid: 2c3f3f0bbccf4ded870d38dfc4df6853
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultBackup,{#JOBID}],300s)>0 and avg(/Template VEEAM - Backup and Replication/vbr[ResultBackup,{#JOBID}],300s)<2'
+                  name: 'Backup "{#JOBNAME}" Warning'
+                  priority: AVERAGE
+                -
+                  uuid: 6763b910f34a4258829b376d0ddc670f
+                  expression: 'nodata(/Template VEEAM - Backup and Replication/vbr[ResultBackup,{#JOBID}],7200s)=1'
+                  name: 'Veeam Backup Data Recovery Problem'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: AVERAGE
+            -
+              uuid: 79d5910216464145b0fcfeaebb5af928
+              name: 'Job execution status {#JOBNAME}'
+              key: 'vbr[RunStatus,{#JOBID}]'
+              delay: 1h
+              history: 7d
+              valuemap:
+                name: vbrJobRunStatus
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: a9da3a9850c14fe18def3ba5a99abd6a
+              name: 'Type of backup {#JOBNAME}'
+              key: 'vbr[Type,{#JOBID}]'
+              delay: 1h
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: 0ed15c57f3344089bece99f62631d878
+              name: 'Number of VMs in job : {#JOBNAME}'
+              key: 'vbr[VmCount,{#JOBNAME}]'
+              delay: 1h
+              history: 7d
+              units: vm(s)
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: 491efa05be654774ba3f92e29efee149
+              name: 'Number of VMs Failed {#JOBNAME}'
+              key: 'vbr[VmCountResultBackup,{#JOBNAME},Failed]'
+              delay: 1h
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+            -
+              uuid: a1871fbe7da54094b60ff53335bc95bf
+              name: 'Number of VMs Warning {#JOBNAME}'
+              key: 'vbr[VmCountResultBackup,{#JOBNAME},Warning]'
+              delay: 1h
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s)'
+          trigger_prototypes:
+            -
+              uuid: 69a82a3af56f42cd9d28085aaf3941ae
+              expression: 'avg(/Template VEEAM - Backup and Replication/vbr[RunStatus,{#JOBID}],28800s)=1 and find(/Template VEEAM - Backup and Replication/vbr[Type,{#JOBID}],,"regexp","BackupSync")=0'
+              name: 'The VEEAM work {#JOBNAME} is still running (8h)'
+              status: DISABLED
+              discover: NO_DISCOVER
+              priority: HIGH
+              manual_close: 'YES'
+        -
+          uuid: 773966f1b3054e4a900327c6acf1d43f
+          name: 'VEEAM BackupSync Jobs'
+          key: 'vbr["DiscoveryBackupSyncJobs"]'
+          delay: 3h
+          lifetime: 1d
+          item_prototypes:
+            -
+              uuid: ccae21dd8fd64e67a43400d1a035a660
+              name: 'Excluded size in job {#JOBBSNAME}'
+              key: 'vbr[ExcludedSize,{#JOBBSID}]'
+              delay: 1h
+              history: 7d
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bytes
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+            -
+              uuid: 1ba1cb3a35c44ac49e66d37a2bd4d721
+              name: 'Included size in the job {#JOBBSNAME}'
+              key: 'vbr[IncludedSize,{#JOBBSID}]'
+              delay: 1h
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: bytes
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+            -
+              uuid: cff4be7eaa154bd5800270b79bd5582a
+              name: 'Result backup {#JOBBSNAME}'
+              key: 'vbr[ResultBackupSync,{#JOBBSID}]'
+              delay: 1h
+              valuemap:
+                name: vbrJobResult
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+              trigger_prototypes:
+                -
+                  uuid: e35d5bdbe0204652a654057feb1a528d
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultBackupSync,{#JOBBSID}],300s)<1'
+                  name: 'Backup "{#JOBBSNAME}" Failed'
+                  priority: HIGH
+                -
+                  uuid: 0c463dfa96d141cdbf6c51dcb1bf7f52
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultBackupSync,{#JOBBSID}],300s)>0 and avg(/Template VEEAM - Backup and Replication/vbr[ResultBackupSync,{#JOBBSID}],300s)<2'
+                  name: 'Backup "{#JOBBSNAME}" Warning'
+                  priority: AVERAGE
+                -
+                  uuid: 47c6b716ed7c465b9706d1f68117aaaf
+                  expression: 'nodata(/Template VEEAM - Backup and Replication/vbr[ResultBackupSync,{#JOBBSID}],7200s)=1'
+                  name: 'Veeam Backup Data Recovery Problem'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: WARNING
+            -
+              uuid: 61c4cdd885e1414eb8d21939b7caa2b0
+              name: 'Job execution status {#JOBBSNAME}'
+              key: 'vbr[RunStatus,{#JOBBSID}]'
+              delay: 1h
+              history: 7d
+              valuemap:
+                name: vbrJobRunStatus
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+            -
+              uuid: 6be65fe5dddc4e1785a59381ca137210
+              name: 'Type of backup {#JOBBSNAME}'
+              key: 'vbr[Type,{#JOBBSID}]'
+              delay: 1h
+              history: 7d
+              trends: '0'
+              value_type: CHAR
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+            -
+              uuid: 831e71abbffc4193be659c79ae6c2b55
+              name: 'Number of VMs in job {#JOBBSNAME}'
+              key: 'vbr[VmCount,{#JOBBSNAME}]'
+              delay: 1h
+              history: 7d
+              units: vm(s)
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+            -
+              uuid: e5a62a37aca24563a5804196caba6213
+              name: 'Number of VMs Failed {#JOBBSNAME}'
+              key: 'vbr[VmCountResultBackupSync,{#JOBBSNAME},Failed]'
+              delay: 1h
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+            -
+              uuid: 9d440b08857548559e49f3029a9688eb
+              name: 'Number of VMs Warning {#JOBBSNAME}'
+              key: 'vbr[VmCountResultBackupSync,{#JOBBSNAME},Warning]'
+              delay: 1h
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s)'
+        -
+          uuid: cf7be303c31f4334940a34177e815cc3
+          name: 'VEEAM BackupSync By VMs'
+          key: 'vbr["DiscoveryBackupVmsByJobs","BackupSync"]'
+          delay: 3h
+          lifetime: 1d
+          item_prototypes:
+            -
+              uuid: 187e1829ff8e4dbb81ec12e1a7622386
+              name: 'Job {#JOBNAME} - Result {#JOBVMNAME}'
+              key: 'vbr[VMResultBackupSync,"{#JOBVMNAME}","{#JOBNAME}"]'
+              delay: 1h
+              valuemap:
+                name: vbrJobResult
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - BackupSync Job(s) By VMs'
+        -
+          uuid: 51793d5858ae4f5eaf03977dd325e130
+          name: 'VEEAM Backup By VMs'
+          key: 'vbr["DiscoveryBackupVmsByJobs"]'
+          delay: 3h
+          lifetime: 1d
+          item_prototypes:
+            -
+              uuid: a2e5828e120248088f2229d0b905ba87
+              name: 'Job {#JOBNAME} - Result {#JOBVMNAME}'
+              key: 'vbr[VMResultBackup,"{#JOBVMNAME}","{#JOBNAME}"]'
+              delay: 1h
+              valuemap:
+                name: vbrJobResult
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Backup Job(s) By VMs'
+        -
+          uuid: 390d00ad938948f4a40583bc7766b40e
+          name: 'VEEAM EndpointBackup Jobs'
+          key: 'vbr["DiscoveryEndpointJobs"]'
+          delay: 3h
+          lifetime: 1d
+          item_prototypes:
+            -
+              uuid: 6be1a80e18b04c5084270e1ca4b1b2f3
+              name: 'Result backup {#JOBENDPOINTNAME}'
+              key: 'vbr[ResultEndpoint,{#JOBENDPOINTID}]'
+              delay: 1h
+              valuemap:
+                name: vbrJobResult
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - EndPoint Backup job(s)'
+              trigger_prototypes:
+                -
+                  uuid: 0560eab75fe345da835c1f90b21635a4
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultEndpoint,{#JOBENDPOINTID}],300s)<1'
+                  name: 'Backup "{#JOBENDPOINTNAME}" Failed'
+                  priority: HIGH
+                -
+                  uuid: 4ccdbdfb92974e03b94e807f26306e72
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultEndpoint,{#JOBENDPOINTID}],300s)>0 and avg(/Template VEEAM - Backup and Replication/vbr[ResultEndpoint,{#JOBENDPOINTID}],300s)<2'
+                  name: 'Backup "{#JOBENDPOINTNAME}" Warning'
+                  priority: AVERAGE
+                -
+                  uuid: 0686ade201164ee096b8e381e1b18623
+                  expression: 'nodata(/Template VEEAM - Backup and Replication/vbr[ResultEndpoint,{#JOBENDPOINTID}],7200s)=1'
+                  name: 'Veeam Backup Data Recovery Problem'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: WARNING
+            -
+              uuid: 5588ee5077824fbc90ec9d6957e8eeb5
+              name: 'Job execution status {#JOBENDPOINTNAME}'
+              key: 'vbr[RunStatus,{#JOBENDPOINTID}]'
+              delay: 1h
+              valuemap:
+                name: vbrJobRunStatus
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - EndPoint Backup job(s)'
+              trigger_prototypes:
+                -
+                  uuid: 6693aa1acc3a4eb2a6fd9f806eab2fdd
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[RunStatus,{#JOBENDPOINTID}],28800s)=1'
+                  name: 'The VEEAM work {#JOBENDPOINTNAME} is still running (8h)'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: HIGH
+            -
+              uuid: 1447e74c432c4634b2451c990cba7034
+              name: 'Type of backup {#JOBENDPOINTNAME}'
+              key: 'vbr[Type,{#JOBENDPOINTID}]'
+              delay: 1h
+              trends: '0'
+              value_type: CHAR
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - EndPoint Backup job(s)'
+        -
+          uuid: 4ea7d37dac7241ea8d94e7713218d029
+          name: 'VEEAM ReplicaBackup Jobs'
+          key: 'vbr["DiscoveryReplicaJobs"]'
+          delay: 3h
+          lifetime: 1d
+          item_prototypes:
+            -
+              uuid: 878c50d57e214584a43762f0073387ea
+              name: 'Result backup {#JOBREPLICANAME}'
+              key: 'vbr[ResultReplica,{#JOBREPLICAID}]'
+              delay: 1h
+              valuemap:
+                name: vbrJobResult
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Replica Job(s)'
+              trigger_prototypes:
+                -
+                  uuid: 63206841395d4ae9bacdd0f9f22b01c2
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultReplica,{#JOBREPLICAID}],300s)<1'
+                  name: 'Backup "{#JOBREPLICANAME}" Failed'
+                  priority: HIGH
+                  manual_close: 'YES'
+                -
+                  uuid: 32ef9736fd744a1fb46e837889c99460
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultReplica,{#JOBREPLICAID}],300s)>0 and avg(/Template VEEAM - Backup and Replication/vbr[ResultReplica,{#JOBREPLICAID}],300s)<2'
+                  name: 'Backup {#JOBREPLICANAME} Warning'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: WARNING
+                -
+                  uuid: 08ead809422e4e9f86f5740f3bbe3bc0
+                  expression: 'nodata(/Template VEEAM - Backup and Replication/vbr[ResultReplica,{#JOBREPLICAID}],7200s)=1'
+                  name: 'Veeam Backup Data Recovery Problem'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: WARNING
+            -
+              uuid: 634e5a2812d3498fb85d5a1e31484be0
+              name: 'Job execution status {#JOBREPLICANAME}'
+              key: 'vbr[RunStatus,{#JOBREPLICAID}]'
+              delay: 1h
+              valuemap:
+                name: vbrJobRunStatus
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Replica Job(s)'
+            -
+              uuid: 4135181d07634ee8b7a59b5ac591c984
+              name: 'Type of backup {#JOBREPLICANAME}'
+              key: 'vbr[Type,{#JOBREPLICAID}]'
+              delay: 1h
+              trends: '0'
+              value_type: TEXT
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Replica Job(s)'
+        -
+          uuid: 0100328315104873a46ad77073049d22
+          name: 'VEEAM Repository'
+          key: 'vbr["DiscoveryRepo"]'
+          delay: 3h
+          lifetime: 7d
+          item_prototypes:
+            -
+              uuid: 7a37b48266894752af42d0edd721a9c5
+              name: 'Total repository space {#REPONAME}'
+              key: 'vbr[RepoCapacity,{#REPONAME}]'
+              delay: 1h
+              status: DISABLED
+              discover: NO_DISCOVER
+              units: B
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Repository'
+            -
+              uuid: 9dc47098e09a4b8789ec35ebde1aaa43
+              name: 'Remaining space repository {#REPONAME}'
+              key: 'vbr[RepoFree,{#REPONAME}]'
+              delay: 1h
+              units: B
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Repository'
+              trigger_prototypes:
+                -
+                  uuid: d99128684c8d43aab680a19cc666ec05
+                  expression: 'last(/Template VEEAM - Backup and Replication/vbr[RepoFree,{#REPONAME}])<2147483648'
+                  name: 'Less than 2Gb remaining on the repository {#REPONAME}'
+                  priority: HIGH
+            -
+              uuid: 5ba99999c3e54fef8fd1a6a6f3f84653
+              name: 'Used repository space {#REPONAME}'
+              type: CALCULATED
+              key: 'vbr[UsedCapacity,{#REPONAME}]'
+              delay: 1h
+              status: DISABLED
+              discover: NO_DISCOVER
+              value_type: FLOAT
+              units: '%'
+              params: '100*last(//vbr[RepoCapacity,{#REPONAME}])/last(//vbr[RepoFree,{#REPONAME}])'
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Repository'
+          graph_prototypes:
+            -
+              uuid: 156ad583b2ec43f1a071f8fb54849ab8
+              name: 'Remaining repository space {#REPONAME}'
+              graph_items:
+                -
+                  color: 1A7C11
+                  item:
+                    host: 'Template VEEAM - Backup and Replication'
+                    key: 'vbr[RepoFree,{#REPONAME}]'
+        -
+          uuid: 8849c9e78e474e248f5e1832e39de1da
+          name: 'VEEAM Tape jobs'
+          key: 'vbr["DiscoveryTapeJobs"]'
+          delay: 3h
+          lifetime: 7d
+          item_prototypes:
+            -
+              uuid: 421d76a398574555b7e4f1523cd95a3f
+              name: 'Result backup {#JOBTAPENAME}'
+              key: 'vbr[ResultTape,{#JOBTAPEID}]'
+              delay: 2m
+              valuemap:
+                name: vbrJobResult
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Tape job(s)'
+              trigger_prototypes:
+                -
+                  uuid: b74720a77f044a81a65ea14a7359a814
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultTape,{#JOBTAPEID}],7m)=0'
+                  name: 'Backup em Fita "{#JOBTAPENAME}" Failed'
+                  priority: HIGH
+                  manual_close: 'YES'
+                -
+                  uuid: 4ccc0bbcafa2499daaec35ded2f23219
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[ResultTape,{#JOBTAPEID}],7m)=1'
+                  name: 'Backup em Fita "{#JOBTAPENAME}" Warning (Insert Tape)'
+                  priority: HIGH
+                  manual_close: 'YES'
+                -
+                  uuid: 8f34400128264bc49522513f8ce2e30c
+                  expression: 'nodata(/Template VEEAM - Backup and Replication/vbr[ResultTape,{#JOBTAPEID}],7200s)=1'
+                  name: 'Veeam Backup Data Recovery Problem'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: WARNING
+            -
+              uuid: 78845bb69510423eadf703f5f09a0cc7
+              name: 'Job execution status {#JOBTAPENAME}'
+              key: 'vbr[RunStatus,{#JOBTAPEID}]'
+              delay: 1h
+              valuemap:
+                name: vbrJobRunStatus
+              tags:
+                -
+                  tag: Application
+                  value: 'VEEAM Backup & Recovery - Tape job(s)'
+              trigger_prototypes:
+                -
+                  uuid: 4b87d8c9e31141d2a17d5c96bb10fd29
+                  expression: 'avg(/Template VEEAM - Backup and Replication/vbr[RunStatus,{#JOBTAPEID}],28800s)=1'
+                  name: 'The VEEAM work {#JOBTAPENAME} is still running (8h)'
+                  status: DISABLED
+                  discover: NO_DISCOVER
+                  priority: HIGH
+      macros:
+        -
+          macro: '{$AUDIT_LOG}'
+          value: 'C:\ProgramData\Veeam\Backup\Audit\Audit.zip.log'
+      valuemaps:
+        -
+          uuid: bdb9bbb688aa4c9ca0027e5b300efaa5
+          name: vbrJobResult
+          mappings:
+            -
+              value: '0'
+              newvalue: Failed
+            -
+              value: '1'
+              newvalue: Warning
+            -
+              value: '2'
+              newvalue: Success
+            -
+              value: '3'
+              newvalue: Idle
+            -
+              value: '4'
+              newvalue: 'Disabled, First Backup or no history'
+            -
+              value: '5'
+              newvalue: 'In progress'
+            -
+              value: '6'
+              newvalue: 'On standby'
+        -
+          uuid: d51acbb9acd347dfb0b51927b2a45c00
+          name: vbrJobRunStatus
+          mappings:
+            -
+              value: '0'
+              newvalue: Stopped
+            -
+              value: '1'
+              newvalue: Running
+        -
+          uuid: f764ed0b59c444fabb6a1480e8b97839
+          name: vbrtaskresult
+          mappings:
+            -
+              value: '0'
+              newvalue: Error
+            -
+              value: '2'
+              newvalue: Succeeded
+            -
+              value: '4'
+              newvalue: Canceled
