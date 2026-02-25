@@ -79,9 +79,12 @@ function ExportXml {
                  }
                  $Result | Export-Clixml $path -Depth 3
             }
-            if ($switch -eq "repos") {
-                $repos = Get-VBRBackupRepository
-                $repoExport = foreach ($r in $repos) {
+
+            # --- EXPORTAÇÃO DE REPOSITÓRIOS (CORREÇÃO DE TIMEOUT) ---
+            if ($switch -like "repos") {
+                $repos = Get-VBRBackupRepository -WarningAction SilentlyContinue
+                $repoExport = @()
+                foreach ($r in $repos) {
                     try {
                         $cont = $r.GetContainer()
                         # Correção: Forçando o valor para long (64-bit integer) para evitar strings formatadas
@@ -102,17 +105,74 @@ function ExportXml {
     }
 }
 
-function ImportXml { Param ($item) $path = "$pathxml\$item.xml"; if (!(Test-Path $path)) { return $null }; try { Import-Clixml $path } catch { $null } }
+# Function import xml
+function ImportXml
+{
+    [CmdletBinding()]
+    Param ([Parameter(ValueFromPipeline = $true)]$item)
+    
+    $path = "$pathxml\$item" + ".xml"
+    if (!(Test-Path -Path $path)) { return $null }
+    
+    try {
+        $xmlquery = Import-Clixml "$path" -ErrorAction Stop
+        return $xmlquery
+    }
+    catch { return $null }
+}
 
-function ConvertTo-ZabbixDiscoveryJson {
-    param ($InputObject, [String[]]$Property)
-    $out = foreach ($obj in $InputObject) {
-        if ($obj) {
-            $Element = @{ }; foreach ($P in $Property) { $Element["{#$($P.ToUpper())}"] = [String]$obj.$P }
-            $Element["{#IFALIAS}"] = "ignore"; $Element["{#FSLABEL}"] = "ignore"; $Element
+# Replace Function for Veeam Correlation
+function VeeamStatusReplace
+{
+    [CmdletBinding()]
+    Param ([Parameter(ValueFromPipeline = $true)]$item)
+    $item.replace('Failed', '0').replace('Warning', '1').replace('Success', '2').replace('None', '2').replace('idle', '3').replace('InProgress', '5').replace('Pending', '6').replace('Pausing', '7').replace('Postprocessing', '8').replace('Resuming', '9').replace('Starting', '10').replace('Stopped', '11').replace('Stopping', '12').replace('WaitingRepository', '13').replace('WaitingTape', '13').replace('Working', '13')
+}
+
+# Function Sort-Object VMs by jobs on last backup
+function veeam-backuptask-unique
+{
+    [CmdletBinding()]
+    Param ([Parameter(Mandatory = $true)]$jobtype, [Parameter(Mandatory = $true)]$ID)
+    $xml1 = ImportXml -item backuptaskswithretry | Where-Object { $_.$jobtype -like "$ID" }
+    $unique = $xml1.Name | Sort-Object -Unique
+    
+    $output = & {
+        foreach ($object in $unique)
+        {
+            $query = $xml1 | Where-Object { $_.Name -like $object } | Sort-Object JobStart -Descending | Select-Object -First 1
+            foreach ($object1 in $query)
+            {
+                $query | Select-Object @{ N = "JobName"; E = { $object1.JobName } }, @{ N = "JobId"; E = { $object1.JobId } }, @{ N = "SessionName"; E = { $object1.SessionName } }, @{ N = "JobResult"; E = { $object1.JobResult } }, @{ N = "JobStart"; E = { $object1.JobStart } }, @{ N = "JobEnd"; E = { $object1.JobEnd } }, @{ N = "Date"; E = { $object1.Date.ToString("yyyy-MM-dd") } }, @{ N = "Name"; E = { $object1.Name } }, @{ N = "Status"; E = { $object1.Status } }
+            }
         }
     }
-    @{ 'data' = $out } | ConvertTo-Json -Compress
+    $output
+}
+function ConvertTo-ZabbixDiscoveryJson
+{
+    [CmdletBinding()]
+    param ([Parameter(ValueFromPipeline = $true)]$InputObject, [Parameter(Position = 0)][String[]]$Property = @("ID", "NAME", "JOBTYPE"))
+    begin { $out = @() }
+    process {
+        if ($InputObject) {
+            $InputObject | ForEach-Object {
+                if ($_) {
+                    $Element = @{ }
+                    # Cria as tags solicitadas (ex: {#JOBNAME})
+                    foreach ($P in $Property) { $Element["{#$($P.ToUpper())}"] = [String]$_.$P }
+                    
+                    # --- FIX: FORÇA AS TAGS PARA EVITAR ERRO NO ZABBIX ---
+                    $Element["{#IFALIAS}"] = "ignore"
+                    $Element["{#FSLABEL}"] = "ignore"
+                    # -----------------------------------------------------
+
+                    $out += $Element
+                }
+            }
+        }
+    }
+    end { @{ 'data' = $out } | ConvertTo-Json -Compress }
 }
 
 # --- SWITCH PRINCIPAL ---
