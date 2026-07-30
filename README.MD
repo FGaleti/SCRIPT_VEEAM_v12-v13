@@ -1,80 +1,95 @@
 # Veeam Backup & Replication Monitoring for Zabbix
 
-This PowerShell script provides an advanced integration between **Veeam Backup & Replication (v12/v13)** and **Zabbix**. It utilizes a **Synchronous XML Export Mode** to ensure high performance, avoiding database lockups, timeouts, and high CPU spikes during monitoring polls.
+Este script PowerShell fornece uma integração avançada entre o **Veeam Backup & Replication (v12/v13)** e o **Zabbix**. Ele utiliza um modo de **Exportação Síncrona em XML** para garantir alta performance, evitando travamentos de banco de dados, timeouts e picos de CPU durante os polls de monitoramento.
 
-## 🚀 Key Features
+---
 
-* **Low Impact:** Data is exported to local XML files periodically, allowing Zabbix to read results instantly without querying the Veeam API/DB every time.
-* **Comprehensive Discovery:** Automatic discovery of Backup Jobs, Replication, Backup Sync, Tape Jobs, and Agent-based jobs.
-* **Granular VM Monitoring:** Tracks the status of individual Virtual Machines within jobs.
-* **Repository Insights:** Monitors Capacity and Free Space for Backup Repositories.
-* **Modern Compatibility:** Fully updated for Veeam v12/v13 and optimized for PowerShell 7.
+## Principais Recursos
 
-## 🛠️ Prerequisites
+| Recurso | Descrição |
+|---|---|
+| **Baixo Impacto** | Os dados são exportados para arquivos XML locais periodicamente, permitindo que o Zabbix leia os resultados instantaneamente, sem consultar a API/DB do Veeam a cada polling |
+| **Descoberta Abrangente** | Descoberta automática de Backup Jobs, Replication, Backup Sync, Tape Jobs e jobs baseados em Agent |
+| **Monitoramento Granular de VMs** | Acompanha o status de máquinas virtuais individuais dentro dos jobs |
+| **Insights de Repositório** | Monitora capacidade e espaço livre dos Backup Repositories |
+| **Compatibilidade Moderna** | Totalmente atualizado para Veeam v12/v13 e otimizado para PowerShell 7 |
 
-1. **Veeam Backup & Replication:** Version 12 or 13.
-2. **PowerShell:** Version 7.x (pwsh) is highly recommended.
-3. **Veeam Module:** The `Veeam.Backup.PowerShell` module must be installed on the server.
-4. **Zabbix Agent:** Installed and configured to execute scripts (e.g., `AllowKey=system.run[*]`).
+---
 
-## 📁 Directory Structure
+## Pré-requisitos
 
-The script uses a temporary directory to store the cache.
+1. **Veeam Backup & Replication:** Versão 12 ou 13.
+2. **PowerShell:** Versão 7.x (pwsh) altamente recomendada.
+3. **Módulo Veeam:** O módulo `Veeam.Backup.PowerShell` deve estar instalado no servidor.
+4. **Zabbix Agent:** Instalado e configurado para executar scripts (ex.: `AllowKey=system.run[*]`).
 
-* **Default Path:** `C:\Program Files\Zabbix Agent\scripts\TempXmlVeeam`
+---
 
-> **Note:** Ensure the Zabbix Agent service user has Read/Write permissions to this folder.
+## Estrutura de Diretórios
 
-## ⚙️ Installation & Setup
+O script utiliza um diretório temporário para armazenar o cache.
 
-### 1. Script Placement
+- **Caminho padrão:** `C:\Program Files\Zabbix Agent\scripts\TempXmlVeeam`
 
-Save the `zabbix_vbr_job.ps1` script into your Zabbix Agent scripts directory (e.g., `C:\Program Files\Zabbix Agent\scripts\`).
+> **Nota:** Garanta que o usuário do serviço do Zabbix Agent possua permissões de leitura/escrita nessa pasta.
 
-### 2. Configure UserParameter
+---
 
-Add the following line to your `zabbix_agentd.conf` or a dedicated `.conf` file in the `zabbix_agentd.d/` directory:
+## Instalação e Configuração
+
+### 1. Posicionamento do Script
+
+Salve o script `zabbix_vbr_job.ps1` no diretório de scripts do Zabbix Agent (ex.: `C:\Program Files\Zabbix Agent\scripts\`).
+
+### 2. Configurar o UserParameter
+
+Adicione a linha a seguir ao `zabbix_agentd.conf` ou a um arquivo `.conf` dedicado dentro do diretório `zabbix_agentd.d/`:
 
 ```conf
 UserParameter=veeam.vbr[*],pwsh.exe -File "C:\Program Files\Zabbix Agent\scripts\zabbix_vbr_job.ps1" "$1" "$2" "$3"
-
 ```
 
-### 3. Schedule the Data Export
+### 3. Agendar a Exportação de Dados
 
-The monitoring relies on an exported XML cache. You must schedule the `ExportXml` task to run every 5 to 15 minutes via **Windows Task Scheduler** or a **Zabbix Item**:
+O monitoramento depende de um cache XML exportado. Agende a task `ExportXml` para ser executada a cada 5 a 15 minutos via **Windows Task Scheduler** ou um **Item do Zabbix**:
 
 ```powershell
 pwsh.exe -File "C:\Program Files\Zabbix Agent\scripts\zabbix_vbr_job.ps1" "ExportXml"
-
 ```
 
-## 📊 Command Reference
+---
 
-| Item (Arg 0) | Description |
+## Referência de Comandos
+
+| Item (Arg 0) | Descrição |
 | --- | --- |
-| `ExportXml` | Refreshes the XML cache (Run this first!). |
-| `DiscoveryBackupJobs` | JSON output for Backup Job LLD. |
-| `DiscoveryRepo` | JSON output for Repository LLD. |
-| `ResultBackup` | Returns the status of a Job (Requires Job ID). |
-| `RepoFree` | Returns Free Space in bytes (Requires Repo Name). |
-| `VmResultBackup` | Returns the status of a specific VM. |
-| `NextRunTime` | Returns the scheduled time for the next run. |
+| `ExportXml` | Atualiza o cache XML (execute este primeiro!) |
+| `DiscoveryBackupJobs` | Saída JSON para LLD de Backup Jobs |
+| `DiscoveryRepo` | Saída JSON para LLD de Repositórios |
+| `ResultBackup` | Retorna o status de um Job (requer Job ID) |
+| `RepoFree` | Retorna o espaço livre em bytes (requer nome do Repo) |
+| `VmResultBackup` | Retorna o status de uma VM específica |
+| `NextRunTime` | Retorna o horário agendado da próxima execução |
 
-## 📝 Status Mapping
+---
 
-To facilitate Triggers and Dashboards, textual statuses are converted to integers:
+## Mapeamento de Status
 
-* **0:** Failed
-* **1:** Warning
-* **2:** Success / None
-* **3:** Idle
-* **5:** In Progress
-* **13:** Waiting (Repository/Tape) / Working
-* **4:** Error / Not Found
+Para facilitar Triggers e Dashboards, os status textuais são convertidos em inteiros:
 
-## 🤝 Authors
+| Código | Status |
+|---|---|
+| 0 | Failed |
+| 1 | Warning |
+| 2 | Success / None |
+| 3 | Idle |
+| 4 | Error / Not Found |
+| 5 | In Progress |
+| 13 | Waiting (Repository/Tape) / Working |
 
-* **Felipe Galeti** 
-* **Nathan Schiavon** 
+---
 
+## Autores
+
+- **Felipe Galeti**
+- **Nathan Schiavon**
